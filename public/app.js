@@ -10,6 +10,7 @@ const timeEl = document.getElementById('time');
 const lineIndicator = document.getElementById('lineIndicator');
 const lyricsEl = document.getElementById('lyrics');
 const lyricsViewport = document.getElementById('lyricsViewport');
+const lyricsNotice = document.getElementById('lyricsNotice');
 
 let pollTimer = null;
 let tickTimer = null;
@@ -83,6 +84,7 @@ function setBackground(url) {
 function renderSyncedLyrics(lines) {
   syncedLines = lines;
   activeLineIndex = -1;
+  lyricsNotice.hidden = true;
   lyricsEl.classList.add('synced');
   lyricsEl.innerHTML = '';
   lines.forEach((line, i) => {
@@ -99,6 +101,7 @@ function renderPlainLyrics(text) {
   syncedLines = null;
   activeLineIndex = -1;
   lineIndicator.textContent = '';
+  lyricsNotice.hidden = true;
   lyricsEl.classList.remove('synced');
   lyricsEl.textContent = text;
   lyricsViewport.scrollTop = 0;
@@ -220,6 +223,8 @@ async function fetchLyrics(artist, title, album, duration) {
       updateActiveLyricLine();
     } else if (data.plain) {
       renderPlainLyrics(data.plain);
+      lyricsNotice.textContent = '\u266a Synced lyrics unavailable for this track \u2014 scroll down to read along.';
+      lyricsNotice.hidden = false;
     } else {
       renderPlainLyrics(`No lyrics found for "${title}" by ${artist}.`);
     }

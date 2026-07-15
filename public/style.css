@@ -127,6 +127,20 @@ main {
 }
 
 /* Lyrics — karaoke viewport with fade mask */
+.lyrics-notice {
+  width: 100%;
+  max-width: 640px;
+  margin: 24px auto 0;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9rem;
+  text-align: center;
+  backdrop-filter: blur(6px);
+}
+
 .lyrics-viewport {
   width: 100%;
   margin-top: 40px;
