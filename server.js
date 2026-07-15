@@ -1,3 +1,9 @@
+// lrclib.net (and some lyrics hosts) publish AAAA records that are not
+// routable from this network; Node's default DNS order tries IPv6 first and
+// stalls before falling back to IPv4. Force IPv4-first so lyrics fetches don't
+// eat a multi-second IPv6 stall on top of the already-high IPv4 latency.
+require('dns').setDefaultResultOrder('ipv4first');
+
 const path = require('path');
 const express = require('express');
 const { AsyncDeviceDiscovery, Sonos } = require('sonos');
@@ -139,7 +145,28 @@ function parseLrc(lrc) {
 }
 
 // Try lrclib.net for synced + plain lyrics; fall back to lyrics.ovh (plain).
+// lrclib is geographically distant (~5-6s round trips from here), so results
+// are cached per song and the fetch timeout is generous to avoid aborting a
+// slow-but-successful synced-lyrics response.
+const lyricsCache = new Map(); // key -> { synced, plain, source, at }
+const LYRICS_TTL_MS = 60 * 60 * 1000; // 1 hour
+const LYRICS_FETCH_MS = 12000;
+
 async function getLyrics({ artist, title, album, duration }) {
+  const key = [artist, title, album || '', duration ? Math.round(duration) : ''].join('|').toLowerCase();
+  const cached = lyricsCache.get(key);
+  if (cached && Date.now() - cached.at < LYRICS_TTL_MS && (cached.synced || cached.plain)) {
+    return cached;
+  }
+
+  const result = await fetchLyrics({ artist, title, album, duration });
+  if (result.synced || result.plain) {
+    lyricsCache.set(key, { ...result, at: Date.now() });
+  }
+  return result;
+}
+
+async function fetchLyrics({ artist, title, album, duration }) {
   // 1) lrclib.net exact get (best when duration is known)
   try {
     const params = new URLSearchParams({ artist_name: artist, track_name: title });
@@ -147,7 +174,7 @@ async function getLyrics({ artist, title, album, duration }) {
     if (duration) params.set('duration', String(Math.round(duration)));
     const r = await fetch(`https://lrclib.net/api/get?${params.toString()}`, {
       headers: { 'User-Agent': 'sonos-lyrics (local home app)' },
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(LYRICS_FETCH_MS),
     });
     if (r.ok) {
       const d = await r.json();
@@ -162,7 +189,7 @@ async function getLyrics({ artist, title, album, duration }) {
     const params = new URLSearchParams({ track_name: title, artist_name: artist });
     const r = await fetch(`https://lrclib.net/api/search?${params.toString()}`, {
       headers: { 'User-Agent': 'sonos-lyrics (local home app)' },
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(LYRICS_FETCH_MS),
     });
     if (r.ok) {
       const arr = await r.json();
@@ -178,7 +205,7 @@ async function getLyrics({ artist, title, album, duration }) {
   // 3) lyrics.ovh plain fallback
   try {
     const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`;
-    const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    const r = await fetch(url, { signal: AbortSignal.timeout(LYRICS_FETCH_MS) });
     if (r.ok) {
       const d = await r.json();
       const plain = (d.lyrics || '').replace(/\r\n/g, '\n').trim() || null;
