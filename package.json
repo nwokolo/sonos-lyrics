@@ -1,0 +1,14 @@
+{
+  "name": "sonos-lyrics",
+  "version": "1.0.0",
+  "description": "Show lyrics and song info for what's playing on a Sonos speaker",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "sonos": "^1.14.3"
+  }
+}

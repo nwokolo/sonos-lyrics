@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sonos Now Playing</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="bgArt" class="bg-art"></div>
+  <div class="scrim"></div>
+
+  <div class="topbar">
+    <div class="controls">
+      <select id="deviceSelect" title="Select a speaker"></select>
+      <button id="refreshBtn" title="Re-scan for speakers">&#x21bb;</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="art-wrap">
+      <img id="albumArt" alt="Album art" />
+    </div>
+
+    <div class="track-info">
+      <h1 id="title">Nothing playing</h1>
+      <p id="artist" class="artist"></p>
+      <p id="album" class="album"></p>
+      <div class="progress"><div id="progressBar"></div></div>
+      <div class="meta-row">
+        <span id="time" class="time"></span>
+        <span id="lineIndicator" class="line-indicator"></span>
+      </div>
+    </div>
+
+    <div id="lyricsViewport" class="lyrics-viewport">
+      <div id="lyrics" class="lyrics">Select a speaker to begin.</div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
