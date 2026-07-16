@@ -56,6 +56,12 @@ All Sonos and external calls are wrapped with timeouts so a slow/flaky speaker c
 
 To keep the server always available, register it as a logon task that auto-restarts on failure. A hidden launcher (`start-sonos-hidden.vbs`) runs `node server.js` with no console window; a Windows Scheduled Task with an *At log on* trigger and restart-on-failure settings keeps it alive.
 
+## Always-on deployment (Proxmox / Linux)
+
+For a reliable always-on setup that survives reboots (recommended over a laptop/desktop that may sleep), run it as a systemd service in a Proxmox LXC container. See [`deploy/DEPLOY.md`](deploy/DEPLOY.md) for step-by-step instructions and the [`deploy/sonos-lyrics.service`](deploy/sonos-lyrics.service) unit file.
+
+> Sonos discovery uses SSDP multicast, so the container must share the same L2 network/VLAN as your speakers.
+
 ## Tech
 
 - Node.js + Express (CommonJS)
