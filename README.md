@@ -62,6 +62,10 @@ For a reliable always-on setup that survives reboots (recommended over a laptop/
 
 > Sonos discovery uses SSDP multicast, so the container must share the same L2 network/VLAN as your speakers.
 
+## Android app
+
+A fullscreen **Android WebView app** (no browser chrome) is available in [`android/`](android/) for easy deployment on wall-mounted tablets and spare devices. It's landscape-optimized, keeps the screen on, auto-reconnects, and points at your Sonos Lyrics server (per-device URL via a hidden long-press settings dialog). A GitHub Actions workflow builds the installable APK for you — see [`android/README.md`](android/README.md).
+
 ## Tech
 
 - Node.js + Express (CommonJS)

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sonos Lyrics</string>
+    <string name="settings_title">Sonos Lyrics settings</string>
+    <string name="keep_screen_on">Keep screen on</string>
+    <string name="save">Save</string>
+    <string name="reload">Reload</string>
+    <string name="cancel">Cancel</string>
+</resources>
