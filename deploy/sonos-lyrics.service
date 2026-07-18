@@ -9,6 +9,10 @@ WorkingDirectory=/opt/sonos-lyrics
 ExecStart=/usr/bin/node server.js
 Environment=NODE_ENV=production
 Environment=PORT=3000
+# If SSDP multicast discovery is unreliable on your network (e.g. IGMP snooping
+# drops it after a container restart), pin your speakers by IP to use unicast
+# instead. Comma-separated; give the speakers DHCP reservations.
+# Environment=SONOS_HOSTS=192.168.86.40,192.168.86.41
 Restart=always
 RestartSec=5
 User=root

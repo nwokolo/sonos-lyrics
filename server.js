@@ -25,7 +25,46 @@ function withTimeout(promise, ms, label = 'operation') {
 // Cache of discovered devices: host -> { name, host, uuid }
 let deviceCache = [];
 
+// Optional: static speaker IPs (comma-separated) so the app never depends on
+// SSDP multicast discovery. Multicast is often dropped on VLANs/containers
+// (e.g. bridge IGMP snooping after an LXC restart), which breaks discovery
+// even though plain unicast HTTP to the speakers still works fine.
+const STATIC_HOSTS = (process.env.SONOS_HOSTS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+// Resolve a speaker's name + uuid over unicast (no multicast needed).
+async function describeHost(host) {
+  const device = new Sonos(host);
+  let name = host;
+  let uuid = null;
+  try {
+    name = await withTimeout(device.getName(), 3000, 'getName');
+  } catch (_) { /* ignore */ }
+  try {
+    const desc = await withTimeout(device.deviceDescription(), 3000, 'deviceDescription');
+    uuid = desc && desc.UDN ? desc.UDN.replace('uuid:', '') : null;
+  } catch (_) { /* ignore */ }
+  return { name, host, uuid };
+}
+
+// Populate the cache from STATIC_HOSTS using unicast only.
+async function seedStaticHosts() {
+  if (!STATIC_HOSTS.length) return deviceCache;
+  const results = [];
+  for (const host of STATIC_HOSTS) {
+    results.push(await describeHost(host));
+  }
+  results.sort((a, b) => a.name.localeCompare(b.name));
+  if (results.length) deviceCache = results;
+  return deviceCache;
+}
+
 async function discoverDevices(timeout = 5000) {
+  // Static hosts win and skip multicast entirely.
+  if (STATIC_HOSTS.length) return seedStaticHosts();
+
   const discovery = new AsyncDeviceDiscovery();
   let found = [];
   try {
@@ -40,16 +79,7 @@ async function discoverDevices(timeout = 5000) {
   for (const device of found) {
     if (seen.has(device.host)) continue;
     seen.add(device.host);
-    let name = device.host;
-    let uuid = null;
-    try {
-      name = await withTimeout(device.getName(), 3000, 'getName');
-    } catch (_) { /* ignore */ }
-    try {
-      const desc = await withTimeout(device.deviceDescription(), 3000, 'deviceDescription');
-      uuid = desc && desc.UDN ? desc.UDN.replace('uuid:', '') : null;
-    } catch (_) { /* ignore */ }
-    results.push({ name, host: device.host, uuid });
+    results.push(await describeHost(device.host));
   }
 
   results.sort((a, b) => a.name.localeCompare(b.name));
@@ -360,11 +390,33 @@ app.get('/api/playing', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Sonos Lyrics running at http://localhost:${PORT}`);
-  console.log('Scanning for Sonos devices on your network...');
-  discoverDevices().then((d) => {
-    console.log(`Found ${d.length} Sonos device(s):`, d.map((x) => x.name).join(', ') || '(none)');
-  });
+  if (STATIC_HOSTS.length) {
+    console.log(`Using static Sonos hosts: ${STATIC_HOSTS.join(', ')}`);
+    seedStaticHosts().then((d) =>
+      console.log(`Seeded ${d.length} speaker(s):`, d.map((x) => x.name).join(', ') || '(none)'));
+  } else {
+    console.log('Scanning for Sonos devices on your network...');
+    discoverWithRetry();
+  }
 });
+
+// Multicast (SSDP) is sometimes not ready right after a host/container boot,
+// so a single scan can come up empty. Retry with backoff until we find at
+// least one speaker, so the app self-heals without a manual re-scan.
+async function discoverWithRetry(attempts = 8) {
+  for (let i = 0; i < attempts; i++) {
+    const d = await discoverDevices();
+    if (d.length) {
+      console.log(`Found ${d.length} Sonos device(s):`, d.map((x) => x.name).join(', '));
+      return;
+    }
+    const wait = Math.min(30000, 3000 * (i + 1));
+    console.log(`No speakers found (attempt ${i + 1}/${attempts}); retrying in ${wait / 1000}s...`);
+    await new Promise((r) => setTimeout(r, wait));
+  }
+  console.log('Discovery gave up for now; will re-scan on demand. ' +
+    'If multicast is filtered on this network, set SONOS_HOSTS to your speaker IPs.');
+}
 
 // Keep the server alive and observable if an unexpected async error slips through.
 process.on('unhandledRejection', (reason) => {

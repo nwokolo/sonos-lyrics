@@ -78,5 +78,22 @@ systemctl restart sonos-lyrics          # restart
 
 - **Empty speaker dropdown** → container is on the wrong bridge/VLAN for Sonos
   SSDP multicast. Fix `--net0 bridge=` to match the speakers' network.
+- **Speakers vanish after a container restart** (discovery worked before, now
+  "no speakers found" even after clicking ↻) → multicast/SSDP is being dropped,
+  typically **IGMP snooping** on the bridge after the container re-joined it.
+  Two fixes:
+  1. **Recommended — bypass multicast entirely.** Set `SONOS_HOSTS` to your
+     speakers' IPs (comma-separated) so the app talks to them directly over
+     unicast. Give the speakers DHCP reservations so the IPs stay put. Add to
+     the systemd unit:
+     ```ini
+     Environment=SONOS_HOSTS=192.168.86.40,192.168.86.41
+     ```
+     then `systemctl daemon-reload && systemctl restart sonos-lyrics`.
+     Find speaker IPs in the Sonos app (Settings → System → About My System) or
+     your router's DHCP table.
+  2. **Or fix multicast on the host** — disable bridge IGMP snooping (or add an
+     IGMP querier): `echo 0 > /sys/class/net/vmbr0/bridge/multicast_snooping`
+     (persist via your network config).
 - **Slow first lyrics load** → lrclib.net is geographically distant; the app
   caches per song, so subsequent loads are instant.
