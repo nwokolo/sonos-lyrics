@@ -77,6 +77,15 @@ main {
   text-align: center;
 }
 
+.stage-left {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stage-right { width: 100%; }
+
 /* Album art */
 .art-wrap {
   width: 300px;
@@ -220,4 +229,71 @@ main {
   .art-wrap { width: 240px; height: 240px; }
   .track-info h1 { font-size: 1.5rem; }
   .lyrics { font-size: 1.1rem; }
+}
+
+/*
+ * Landscape (phones + tablets): side-by-side layout so the album art and the
+ * active lyrics are both always fully visible without scrolling the page.
+ */
+@media (orientation: landscape) and (max-height: 900px) {
+  html, body { overflow: hidden; }
+
+  .topbar { padding: 8px 12px; }
+
+  main {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    max-width: none;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    padding: 12px 20px;
+    gap: 28px;
+    text-align: left;
+  }
+
+  .stage-left {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: 42vw;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .art-wrap {
+    width: min(60vh, 320px);
+    height: min(60vh, 320px);
+  }
+
+  .track-info {
+    margin-top: 14px;
+    text-align: center;
+    width: 100%;
+  }
+  .track-info h1 { font-size: clamp(1rem, 2.6vh, 1.4rem); margin-bottom: 2px; }
+  .artist { font-size: clamp(0.8rem, 2vh, 1rem); }
+  .album { font-size: clamp(0.7rem, 1.7vh, 0.85rem); }
+  .progress { margin-top: 10px; }
+  .meta-row { margin-top: 6px; }
+
+  .stage-right {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .lyrics-notice { margin-top: 0; margin-bottom: 12px; }
+
+  .lyrics-viewport {
+    margin-top: 0;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .lyrics { text-align: left; }
+  .lyrics.synced { padding: 42vh 0; }
 }
