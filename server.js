@@ -65,9 +65,20 @@ async function discoverDevices(timeout = 5000) {
   // Static hosts win and skip multicast entirely.
   if (STATIC_HOSTS.length) return seedStaticHosts();
 
-  const discovery = new AsyncDeviceDiscovery();
+  // Guard against a broken/old "sonos" install where this export is missing,
+  // so we log a clear hint instead of crash-looping on "not a constructor".
+  if (typeof AsyncDeviceDiscovery !== 'function') {
+    console.error(
+      'AsyncDeviceDiscovery is unavailable in the installed "sonos" package. ' +
+      'Reinstall deps (rm -rf node_modules package-lock.json && npm install) ' +
+      'or set SONOS_HOSTS to your speaker IPs to bypass discovery.'
+    );
+    return deviceCache;
+  }
+
   let found = [];
   try {
+    const discovery = new AsyncDeviceDiscovery();
     found = await discovery.discoverMultiple({ timeout });
   } catch (err) {
     console.error('Discovery error:', err.message);
