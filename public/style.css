@@ -232,10 +232,11 @@ main {
 }
 
 /*
- * Landscape (phones + tablets): side-by-side layout so the album art and the
- * active lyrics are both always fully visible without scrolling the page.
+ * Landscape (phones, tablets, desktop): side-by-side layout so the album art
+ * and the active lyrics are both always fully visible without scrolling the
+ * page. Triggered by orientation alone so it works regardless of screen height.
  */
-@media (orientation: landscape) and (max-height: 900px) {
+@media (orientation: landscape) {
   html, body { overflow: hidden; }
 
   .topbar { padding: 8px 12px; }
