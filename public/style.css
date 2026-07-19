@@ -297,4 +297,9 @@ main {
 
   .lyrics { text-align: left; }
   .lyrics.synced { padding: 42vh 0; }
+
+  /* Left-align the scale transform so the active line grows rightward into
+     empty space instead of clipping off the column's left edge. */
+  .lyrics-viewport { padding-left: 10px; }
+  .lyric-line { transform-origin: left center; }
 }
