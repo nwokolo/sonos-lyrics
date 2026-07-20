@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sonos Lyrics Local</string>
+    <string name="settings_title">Sonos Lyrics settings</string>
+    <string name="keep_screen_on">Keep screen on</string>
+    <string name="static_hosts_hint">Speaker IPs (optional, comma-separated)</string>
+    <string name="static_hosts_label">Leave blank to auto-discover speakers on the network.</string>
+    <string name="save">Save</string>
+    <string name="reload">Reload</string>
+    <string name="cancel">Cancel</string>
+</resources>
