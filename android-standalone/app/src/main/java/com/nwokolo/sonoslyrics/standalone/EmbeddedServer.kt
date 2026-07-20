@@ -10,7 +10,7 @@ import java.io.IOException
 
 /**
  * Loopback HTTP server that serves the existing web frontend (copied into
- * assets/www at build time) and reimplements the Node backend's /api/* routes
+ * assets/www at build time) and reimplements the Node backend's API routes
  * natively, so the WebView talks to 127.0.0.1 with no external dependency and
  * no CORS concerns.
  */
