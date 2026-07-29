@@ -68,6 +68,9 @@ android {
 
     kotlinOptions {
         jvmTarget = '17'
+        // play-services-ads / gms are compiled with newer Kotlin metadata than
+        // our Kotlin 1.9.x reader; their ABI is stable so skip the version check.
+        freeCompilerArgs += ['-Xskip-metadata-version-check']
     }
 }
 
