@@ -83,7 +83,29 @@ can keep both.
 - `INTERNET` / `ACCESS_NETWORK_STATE` — talk to speakers + lyrics services.
 - `ACCESS_WIFI_STATE` / `CHANGE_WIFI_MULTICAST_STATE` — acquire the
   `MulticastLock` needed for SSDP discovery.
+- `com.google.android.gms.permission.AD_ID` — used by the AdMob SDK.
 - Cleartext HTTP is enabled (loopback + speakers use plain HTTP on the LAN).
+
+## Ads & publishing
+
+This app is wired for **Google AdMob** (an adaptive banner plus an occasional
+interstitial on track change) and targets **API 36** so it can be published to
+the Play Store.
+
+- By default the build uses Google's **test** ad unit IDs — safe for
+  development, and no real ads are served. Real IDs are injected at build time
+  via `-PADMOB_APP_ID` / `-PADMOB_BANNER_ID` / `-PADMOB_INTERSTITIAL_ID`
+  (never committed).
+- On first launch the app shows a Google **UMP** consent form where required
+  (e.g. EEA/UK) before initializing ads.
+- To build a signed release bundle (`.aab`) and walk through the full Play
+  Store submission, see **[`PUBLISHING.md`](PUBLISHING.md)**. A ready-to-host
+  policy is in **[`PRIVACY_POLICY.md`](PRIVACY_POLICY.md)**.
+
+> [!IMPORTANT]
+> Lyrics come from lrclib.net / lyrics.ovh, which are **not** licensed lyrics
+> providers. Monetizing and publishing a lyrics app carries a real copyright /
+> policy-takedown risk — understand it before publishing commercially.
 
 ## Notes / limitations
 

@@ -3,22 +3,62 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+// ---- AdMob / signing configuration ------------------------------------------
+// Real IDs are injected at build time (never committed). Defaults are Google's
+// official SAMPLE/TEST IDs, which are safe to ship during development and will
+// only ever serve test ads. Override for a production build with either
+// -PADMOB_APP_ID=... on the Gradle command line or a gradle.properties entry.
+def prop = { String name, String fallback ->
+    def v = (project.findProperty(name) ?: '').toString().trim()
+    v.isEmpty() ? fallback : v
+}
+def admobAppId = prop('ADMOB_APP_ID', 'ca-app-pub-3940256099942544~3347511713')
+def admobBannerId = prop('ADMOB_BANNER_ID', 'ca-app-pub-3940256099942544/9214589741')
+def admobInterstitialId = prop('ADMOB_INTERSTITIAL_ID', 'ca-app-pub-3940256099942544/1033173712')
+
+// Release signing is read from environment variables (CI secrets) or Gradle
+// properties so no keystore or password is ever committed to the repo.
+def ksFile = System.getenv('KEYSTORE_FILE') ?: project.findProperty('KEYSTORE_FILE')
+def hasReleaseSigning = ksFile != null && !ksFile.toString().isEmpty()
+
 android {
     namespace 'com.nwokolo.sonoslyrics.standalone'
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         applicationId 'com.nwokolo.sonoslyrics.standalone'
         minSdk 26
-        targetSdk 34
+        targetSdk 36
         versionCode 1
-        versionName '1.0'
+        versionName '1.0.0'
+
+        manifestPlaceholders = [admobAppId: admobAppId]
+        buildConfigField 'String', 'ADMOB_BANNER_ID', "\"${admobBannerId}\""
+        buildConfigField 'String', 'ADMOB_INTERSTITIAL_ID', "\"${admobInterstitialId}\""
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(ksFile)
+                storePassword System.getenv('KEYSTORE_PASSWORD') ?: project.findProperty('KEYSTORE_PASSWORD')
+                keyAlias System.getenv('KEY_ALIAS') ?: project.findProperty('KEY_ALIAS')
+                keyPassword System.getenv('KEY_PASSWORD') ?: project.findProperty('KEY_PASSWORD')
+            }
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 
     compileOptions {
@@ -45,4 +85,6 @@ tasks.named('preBuild') {
 
 dependencies {
     implementation 'org.nanohttpd:nanohttpd:2.3.1'
+    implementation 'com.google.android.gms:play-services-ads:25.4.0'
+    implementation 'com.google.android.ump:user-messaging-platform:4.0.0'
 }

@@ -1,0 +1,75 @@
+name: Build Signed Release AAB (Play Store)
+
+# Produces a signed Android App Bundle (.aab) for Play Store upload.
+#
+# Requires these repository secrets:
+#   KEYSTORE_BASE64        - base64 of your release keystore (.jks)
+#   KEYSTORE_PASSWORD      - keystore password
+#   KEY_ALIAS              - key alias
+#   KEY_PASSWORD           - key password
+#   ADMOB_APP_ID           - ca-app-pub-XXXX~YYYY  (your real AdMob app ID)
+#   ADMOB_BANNER_ID        - ca-app-pub-XXXX/YYYY  (real banner unit)
+#   ADMOB_INTERSTITIAL_ID  - ca-app-pub-XXXX/YYYY  (real interstitial unit)
+#
+# If the AdMob secrets are omitted the build falls back to Google's TEST ad
+# unit IDs (safe, but do NOT publish a store build serving test ads).
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK packages
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Decode release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::KEYSTORE_BASE64 secret is not set — cannot build a signed release."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+      - name: Build signed release bundle
+        working-directory: android-standalone
+        env:
+          KEYSTORE_FILE: ${{ runner.temp }}/release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          gradle bundleRelease --no-daemon --stacktrace \
+            -PADMOB_APP_ID="${{ secrets.ADMOB_APP_ID }}" \
+            -PADMOB_BANNER_ID="${{ secrets.ADMOB_BANNER_ID }}" \
+            -PADMOB_INTERSTITIAL_ID="${{ secrets.ADMOB_INTERSTITIAL_ID }}"
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonos-lyrics-standalone-release-aab
+          path: android-standalone/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
